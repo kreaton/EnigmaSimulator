@@ -42,6 +42,7 @@ h1 span { font-size:.8rem; letter-spacing:.1rem; color:#9c8f73; margin-left:.8re
 .sel.ring { font-size:.75rem; }
 .step { width:3.4rem; background:#2b2d30; color:var(--brass); border:1px solid #666; border-radius:4px; cursor:pointer; }
 .step:hover { background:#3c3f43; }
+.step.spacer { visibility:hidden; }
 .drum { position:relative; width:5.2rem; height:6.4rem; border-radius:10px; overflow:hidden; display:flex; flex-direction:column;
   align-items:center; justify-content:center; border:2px solid #777;
   background:linear-gradient(90deg,#0b0b0b,#4a4d52 20%,#a5a8ad 50%,#4a4d52 80%,#0b0b0b); }
