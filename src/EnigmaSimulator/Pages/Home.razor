@@ -1,0 +1,401 @@
+﻿@page "/"
+@using System.Globalization
+@using EnigmaSimulator.Core
+
+<PageTitle>Enigma Simulator</PageTitle>
+
+<div class="enigma-root" tabindex="0" @ref="_root" @onkeydown="OnKeyDown" @onkeyup="OnKeyUp">
+
+    <h1>ENIGMA <span>Wehrmacht · 3-Walzen-Maschine</span></h1>
+
+    <div class="case">
+
+        @* ───────────── Lampenfeld (lampboard) ───────────── *@
+        <section class="panel lamps">
+            @foreach (var row in Rows)
+            {
+                <div class="row">
+                    @foreach (char ch in row)
+                    {
+                        int c = ch - 'A';
+                        <div class="lamp @(_lamp == c ? "lit" : "")">@ch</div>
+                    }
+                </div>
+            }
+        </section>
+
+        @* ───────────── Walzen (rotors) ───────────── *@
+        <section class="panel rotors">
+            <div class="rotor-col reflector">
+                <div class="cap">Umkehrwalze</div>
+                <select class="sel" @onchange="e => SetReflector(int.Parse(e.Value!.ToString()!))" @onkeydown:stopPropagation>
+                    @for (int r = 0; r < EnigmaMachine.Reflectors.Length; r++)
+                    {
+                        <option value="@r" selected="@(M.ReflectorId == r)">@EnigmaMachine.Reflectors[r].Name</option>
+                    }
+                </select>
+                <div class="drum-wrap">
+                    <div class="drum fixed"><div class="cur">⇄</div></div>
+                    @if (_last is { } rp)
+                    {
+                        <div class="pass @(_popupOn ? "show" : "")">
+                            <div class="pass-row"><small>Umkehr</small><b>@EnigmaMachine.Letter(rp.Path[4])</b><span>→</span><b class="o">@EnigmaMachine.Letter(rp.Path[5])</b></div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            @for (int s = 0; s < 3; s++)
+            {
+                int slot = s;
+                var spec = EnigmaMachine.Rotors[M.RotorIds[slot]];
+                <div class="rotor-col">
+                    <div class="cap">Walze @(new[] { "links", "Mitte", "rechts" }[slot])</div>
+                    <select class="sel" @onchange="e => SetRotor(slot, int.Parse(e.Value!.ToString()!))" @onkeydown:stopPropagation>
+                        @for (int r = 0; r < EnigmaMachine.Rotors.Length; r++)
+                        {
+                            <option value="@r" selected="@(M.RotorIds[slot] == r)">@EnigmaMachine.Rotors[r].Name</option>
+                        }
+                    </select>
+                    <button class="step" title="Walze weiterdrehen" @onclick="() => Turn(slot, 1)" @onkeydown:stopPropagation>▲</button>
+                    <div class="drum-wrap">
+                        <div class="drum" title="Fenster: aktuelle Stellung der Walze">
+                            <div class="adj">@EnigmaMachine.Letter(M.Positions[slot] - 1)</div>
+                            <div class="cur">@EnigmaMachine.Letter(M.Positions[slot])</div>
+                            <div class="adj">@EnigmaMachine.Letter(M.Positions[slot] + 1)</div>
+                            @if (M.NotchVisible(slot))
+                            {
+                                <div class="notch" title="Übertragskerbe (Notch) steht im Fenster"></div>
+                            }
+                        </div>
+                        @if (_last is { } p)
+                        {
+                            @* Path: [1]=plugboard out, [2..4]=forward R,M,L, [5]=reflector, [6..8]=backward L,M,R *@
+                            <div class="pass @(_popupOn ? "show" : "")">
+                                <div class="pass-row"><small>hin</small><b>@EnigmaMachine.Letter(p.Path[3 - slot])</b><span>→</span><b class="o">@EnigmaMachine.Letter(p.Path[4 - slot])</b></div>
+                                <div class="pass-row"><small>zurück</small><b>@EnigmaMachine.Letter(p.Path[5 + slot])</b><span>→</span><b class="o">@EnigmaMachine.Letter(p.Path[6 + slot])</b></div>
+                            </div>
+                        }
+                    </div>
+                    <button class="step" title="Walze zurückdrehen" @onclick="() => Turn(slot, -1)" @onkeydown:stopPropagation>▼</button>
+                    <div class="cap small">Ringstellung</div>
+                    <select class="sel ring" @onchange="e => SetRing(slot, int.Parse(e.Value!.ToString()!))" @onkeydown:stopPropagation>
+                        @for (int r = 0; r < 26; r++)
+                        {
+                            <option value="@r" selected="@(M.Rings[slot] == r)">@((char)('A' + r)) (@((r + 1).ToString("00")))</option>
+                        }
+                    </select>
+                    <div class="cap small wiring">@spec.Wiring</div>
+                </div>
+            }
+        </section>
+
+        @* ───────────── Tastatur (keyboard) ───────────── *@
+        <section class="panel keys">
+            @foreach (var row in Rows)
+            {
+                <div class="row">
+                    @foreach (char ch in row)
+                    {
+                        int c = ch - 'A';
+                        <div class="key @(_held == c ? "down" : "")" role="button"
+                             @onpointerdown="() => PressKey(c, true)" @onpointerdown:preventDefault
+                             @onpointerup="() => ReleaseKey(true)" @onpointerleave="() => ReleaseKey(true)"
+                             @onpointercancel="() => ReleaseKey(true)">@ch</div>
+                    }
+                </div>
+            }
+        </section>
+
+        @* ───────────── Steckerbrett (plugboard) ───────────── *@
+        <section class="panel plugboard">
+            <div class="cap">Steckerbrett — @M.PlugCount / 10 Kabel
+                <span class="hint">@_plugMsg</span>
+            </div>
+            <svg viewBox="0 0 560 230" class="board" xmlns="http://www.w3.org/2000/svg">
+                @foreach (var (a, b, idx) in M.PlugPairs().Select((p, i) => (p.A, p.B, i)))
+                {
+                    var (x1, y1) = SocketPos(a);
+                    var (x2, y2) = SocketPos(b);
+                    <path d="M @F(x1) @F(y1 + 6) C @F(x1) @F(y1 + 70), @F(x2) @F(y2 + 70), @F(x2) @F(y2 + 6)"
+                          class="cable" stroke="@CableColors[idx % CableColors.Length]" />
+                }
+                @foreach (var row in Rows)
+                {
+                    foreach (char ch in row)
+                    {
+                        int c = ch - 'A';
+                        var (x, y) = SocketPos(c);
+                        <g class="socket @(M.IsPlugged(c) ? "used" : "") @(_pending == c ? "pending" : "")"
+                           @onclick="() => OnSocket(c)" @onclick:stopPropagation>
+                            <circle cx="@F(x)" cy="@F(y)" r="19" class="ring" />
+                            <circle cx="@F(x)" cy="@F(y + 6)" r="8" class="hole" />
+                            <text x="@F(x)" y="@F(y - 8)" class="lbl">@ch</text>
+                        </g>
+                    }
+                }
+            </svg>
+            <div class="buttons">
+                <button class="btn" @onclick="ClearPlugs" @onkeydown:stopPropagation>Alle Kabel ziehen</button>
+                <button class="btn" @onclick="RandomPlugs" @onkeydown:stopPropagation>Zufällig stecken</button>
+                <span class="hint">Zwei Buchstaben anklicken = Kabel stecken; gestecktes Loch anklicken = Kabel ziehen.</span>
+            </div>
+        </section>
+    </div>
+
+    @* ───────────── Signalweg & Papierstreifen ───────────── *@
+    <section class="panel path">
+        <div class="cap">Signalweg des letzten Buchstabens</div>
+        <div class="chips">
+            @if (_last is null)
+            {
+                <span class="hint">Taste drücken (Maus oder Tastatur A–Z) …</span>
+            }
+            else
+            {
+                for (int i = 0; i < _last.Path.Length; i++)
+                {
+                    <div class="chip @(i == 5 ? "refl" : "") @(i == 9 ? "out" : "")">
+                        <small>@EncipherResult.StageNames[i]</small>
+                        <b>@EnigmaMachine.Letter(_last.Path[i])</b>
+                    </div>
+                    @if (i < _last.Path.Length - 1) { <span class="arrow">→</span> }
+                }
+            }
+        </div>
+    </section>
+
+    <section class="panel tapes">
+        <div class="tape-row"><span class="cap">Klartext</span><code>@Group(_plain)</code></div>
+        <div class="tape-row"><span class="cap">Geheimtext</span><code class="cipher">@Group(_cipher)</code></div>
+        <div class="buttons">
+            <textarea class="bulk" rows="2" placeholder="Text einfügen und verschlüsseln (Ä→AE, Ö→OE, Ü→UE, ß→SS; Rest ohne Buchstaben wird ignoriert)"
+                      @bind="_bulk" @bind:event="oninput" @onkeydown:stopPropagation @onkeyup:stopPropagation></textarea>
+            <button class="btn" @onclick="ProcessBulk" @onkeydown:stopPropagation>Ver-/Entschlüsseln</button>
+            <button class="btn" @onclick="ResetToStart" @onkeydown:stopPropagation>Grundstellung</button>
+            <button class="btn" @onclick="ClearTapes" @onkeydown:stopPropagation>Streifen löschen</button>
+        </div>
+        <div class="hint">
+            Walzenfenster: <b>@string.Concat(M.Positions.Select(p => EnigmaMachine.Letter(p)))</b> ·
+            Grundstellung: <b>@string.Concat(_start.Select(p => EnigmaMachine.Letter(p)))</b> ·
+            Die Enigma ist reziprok: gleiche Einstellung + Geheimtext eintippen = Klartext.
+        </div>
+    </section>
+
+    <footer class="credits">© 2026 Per Hejndorf, Kreaton – @BuildInfo.Display</footer>
+</div>
+
+@code {
+    private static readonly string[] Rows = { "QWERTZUIO", "ASDFGHJK", "PYXCVBNML" };
+    private static readonly string[] CableColors =
+        { "#d9534f", "#5bc0de", "#f0ad4e", "#5cb85c", "#b07cd8", "#e8e8e8", "#e377c2", "#8c6d31", "#17becf", "#bcbd22" };
+
+    private EnigmaMachine M { get; } = new();
+    private readonly int[] _start = { 0, 0, 0 };
+    private ElementReference _root;
+    private bool _focusPending = true;
+
+    private int? _lamp, _held, _pending;
+    private bool _heldByMouse;
+
+    // rotor popups: shown while a key is down, then linger briefly (hovering a drum also shows them)
+    private const int PopupLingerMs = 1500;
+    private bool _popupOn;
+    private int _popupGen;
+    private EncipherResult? _last;
+    private string _plain = "", _cipher = "", _bulk = "", _plugMsg = "";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focusPending)
+        {
+            _focusPending = false;
+            await _root.FocusAsync();
+        }
+    }
+
+    // ───────── keyboard input ─────────
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Repeat || e.CtrlKey || e.AltKey || e.MetaKey) return;
+        if (e.Key.Length == 1 && char.IsAsciiLetter(e.Key[0]))
+            PressKey(char.ToUpperInvariant(e.Key[0]) - 'A', false);
+    }
+
+    private void OnKeyUp(KeyboardEventArgs e)
+    {
+        if (e.Key.Length == 1 && char.IsAsciiLetter(e.Key[0]) && _held == char.ToUpperInvariant(e.Key[0]) - 'A')
+            ReleaseKey(false);
+    }
+
+    private void PressKey(int c, bool mouse)
+    {
+        if (_held is not null) return; // the real machine mechanically locks while a key is down
+        _held = c;
+        _heldByMouse = mouse;
+        _last = M.Press(c);
+        _lamp = _last.Output;
+        _plain += EnigmaMachine.Letter(c);
+        _cipher += EnigmaMachine.Letter(_last.Output);
+        _popupOn = true;
+        _popupGen++;
+        if (mouse) _focusPending = true;
+    }
+
+    private void ReleaseKey(bool mouse)
+    {
+        if (_held is null || _heldByMouse != mouse) return;
+        _held = null;
+        _lamp = null;
+        _ = HidePopupLater(_popupGen);
+    }
+
+    private async Task HidePopupLater(int gen)
+    {
+        await Task.Delay(PopupLingerMs);
+        if (gen != _popupGen || _held is not null) return; // a newer key press owns the popup
+        _popupOn = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    // ───────── settings ─────────
+
+    private void SettingsChanged()
+    {
+        Array.Copy(M.Positions, _start, 3);
+        ClearTapes();
+        _focusPending = true;
+    }
+
+    private void Turn(int slot, int delta)
+    {
+        M.Positions[slot] = (M.Positions[slot] + delta + 26) % 26;
+        SettingsChanged();
+    }
+
+    private void SetRing(int slot, int ring)
+    {
+        M.Rings[slot] = ring;
+        SettingsChanged();
+    }
+
+    private void SetReflector(int id)
+    {
+        M.ReflectorId = id;
+        SettingsChanged();
+    }
+
+    private void SetRotor(int slot, int id)
+    {
+        // each rotor exists only once: swap with the slot that currently holds it
+        int other = Array.IndexOf(M.RotorIds, id);
+        if (other >= 0 && other != slot) M.RotorIds[other] = M.RotorIds[slot];
+        M.RotorIds[slot] = id;
+        SettingsChanged();
+    }
+
+    // ───────── plugboard ─────────
+
+    private void OnSocket(int c)
+    {
+        _plugMsg = "";
+        if (M.IsPlugged(c))
+        {
+            M.Unplug(c);
+            _pending = null;
+            SettingsChanged();
+            return;
+        }
+        if (_pending is null) { _pending = c; return; }
+        if (_pending == c) { _pending = null; return; }
+
+        if (M.TryPlug(_pending.Value, c)) SettingsChanged();
+        else _plugMsg = "Maximal 10 Kabel!";
+        _pending = null;
+    }
+
+    private void ClearPlugs()
+    {
+        M.ClearPlugboard();
+        _pending = null;
+        SettingsChanged();
+    }
+
+    private void RandomPlugs()
+    {
+        M.ClearPlugboard();
+        var letters = Enumerable.Range(0, 26).OrderBy(_ => Random.Shared.Next()).Take(20).ToArray();
+        for (int i = 0; i < 20; i += 2) M.TryPlug(letters[i], letters[i + 1]);
+        _pending = null;
+        SettingsChanged();
+    }
+
+    // ───────── text / tapes ─────────
+
+    private void ProcessBulk()
+    {
+        foreach (char ch in Normalize(_bulk))
+        {
+            _last = M.Press(ch - 'A');
+            _plain += ch;
+            _cipher += EnigmaMachine.Letter(_last.Output);
+        }
+        _bulk = "";
+        _focusPending = true;
+        if (_last is not null)
+        {
+            _popupOn = true;
+            _ = HidePopupLater(++_popupGen);
+        }
+    }
+
+    private static string Normalize(string s)
+    {
+        var sb = new System.Text.StringBuilder();
+        foreach (char ch in s.ToUpperInvariant())
+        {
+            switch (ch)
+            {
+                case 'Ä': sb.Append("AE"); break;
+                case 'Ö': sb.Append("OE"); break;
+                case 'Ü': sb.Append("UE"); break;
+                case 'ß': case 'ẞ': sb.Append("SS"); break;
+                default: if (char.IsAsciiLetter(ch)) sb.Append(ch); break;
+            }
+        }
+        return sb.ToString();
+    }
+
+    private void ResetToStart()
+    {
+        Array.Copy(_start, M.Positions, 3);
+        ClearTapes();
+        _focusPending = true;
+    }
+
+    private void ClearTapes()
+    {
+        _plain = _cipher = "";
+        _last = null;
+        _lamp = _held = null;
+    }
+
+    private static string Group(string s) =>
+        string.Join(' ', Enumerable.Range(0, (s.Length + 4) / 5).Select(i => s.Substring(i * 5, Math.Min(5, s.Length - i * 5))));
+
+    // ───────── SVG helpers ─────────
+
+    private static (double X, double Y) SocketPos(int c)
+    {
+        char ch = (char)('A' + c);
+        for (int r = 0; r < Rows.Length; r++)
+        {
+            int j = Rows[r].IndexOf(ch);
+            if (j >= 0) return (280 + (j - (Rows[r].Length - 1) / 2.0) * 58, 38 + r * 62);
+        }
+        return (0, 0);
+    }
+
+    private static string F(double d) => d.ToString("0.#", CultureInfo.InvariantCulture);
+}

@@ -1,0 +1,12 @@
+<Solution>
+  <Folder Name="/.github/" />
+  <Folder Name="/.github/workflows/">
+    <File Path=".github/workflows/deploy.yml" />
+  </Folder>
+  <Folder Name="/src/">
+    <Project Path="src/EnigmaSimulator/EnigmaSimulator.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/EnigmaSimulator.Tests/EnigmaSimulator.Tests.csproj" />
+  </Folder>
+</Solution>

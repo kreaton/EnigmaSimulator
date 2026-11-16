@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<!--
+  The README banner (images/banner.png), 1920x1200. The machine on the right uses the app's own
+  markup and stylesheet, frozen on the letter E (lamp N lit, rotor popups open).
+  Render it with:  powershell -File tools\make-banner.ps1
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Enigma Simulator banner</title>
+<link rel="stylesheet" href="../src/EnigmaSimulator/wwwroot/css/app.css" />
+<style>
+    html, body { width: 1920px; height: 1200px; overflow: hidden; }
+    body {
+        margin: 0;
+        background: radial-gradient(1100px 800px at 75% 40%, #3b2a1a, transparent 70%), #0d0b08;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 110px 0 110px;
+        box-sizing: border-box;
+    }
+    .pitch { max-width: 640px; }
+    .brand { display: flex; align-items: center; gap: 30px; }
+    .brand img { width: 140px; height: 140px; border-radius: 30px; box-shadow: 0 16px 40px #000a; }
+    .brand h1 { margin: 0; font-size: 92px; letter-spacing: .6rem; line-height: 1; }
+    .brand h1 small { display: block; font-size: 34px; letter-spacing: .5rem; color: #b9ad90; margin-top: 14px; }
+    .tagline { margin: 52px 0 0; font-size: 36px; line-height: 1.35; color: #efe9d6; }
+    .features { margin: 44px 0 0; padding: 0; list-style: none; display: grid; gap: 20px; }
+    .features li { position: relative; padding-left: 38px; font-size: 26px; color: #d8cfb8; }
+    .features li::before { content: ""; position: absolute; left: 0; top: 11px; width: 14px; height: 14px;
+        border-radius: 50%; background: radial-gradient(circle at 40% 35%, #fffbd0, #ffd84a 55%, #c8940c); }
+    .features em { font-style: normal; color: var(--brass); font-weight: bold; }
+
+    .machine { flex: none; width: 700px; transform: scale(1.3); transform-origin: center right; }
+    .machine .case { gap: .7rem; }
+    .machine .rotors { padding-top: 5.6rem; }
+    .machine .row { gap: .45rem; }
+    .machine .lamp { width: 40px; height: 40px; }
+</style>
+</head>
+<body>
+    <div class="pitch">
+        <div class="brand">
+            <img src="../src/EnigmaSimulator/wwwroot/icons/icon-512.png" alt="" />
+            <h1>ENIGMA<small>SIMULATOR</small></h1>
+        </div>
+        <p class="tagline">The Wehrmacht Enigma I / M3, wired letter by letter, running entirely in your browser.</p>
+        <ul class="features">
+            <li>Rotors <em>I–VIII</em>, reflectors <em>A/B/C</em>, ring settings</li>
+            <li>Real <em>double-stepping</em> of the middle rotor</li>
+            <li>Plugboard with up to <em>10 cables</em></li>
+            <li>Every rotor shows its <em>in → out</em> letters, both ways</li>
+        </ul>
+    </div>
+
+    <div class="machine">
+        <div class="case">
+            <section class="panel lamps">
+                <div class="row"><div class="lamp">Q</div><div class="lamp">W</div><div class="lamp">E</div><div class="lamp">R</div><div class="lamp">T</div><div class="lamp">Z</div><div class="lamp">U</div><div class="lamp">I</div><div class="lamp">O</div></div>
+                <div class="row"><div class="lamp">A</div><div class="lamp">S</div><div class="lamp">D</div><div class="lamp">F</div><div class="lamp">G</div><div class="lamp">H</div><div class="lamp">J</div><div class="lamp">K</div></div>
+                <div class="row"><div class="lamp">P</div><div class="lamp">Y</div><div class="lamp">X</div><div class="lamp">C</div><div class="lamp">V</div><div class="lamp">B</div><div class="lamp lit">N</div><div class="lamp">M</div><div class="lamp">L</div></div>
+            </section>
+            <section class="panel rotors">
+                <div class="rotor-col reflector">
+                    <div class="cap">Umkehrwalze</div>
+                    <div class="drum-wrap">
+                        <div class="drum fixed"><div class="cur">⇄</div></div>
+                        <div class="pass show"><div class="pass-row"><small>Umkehr</small><b>D</b><span>→</span><b class="o">H</b></div></div>
+                    </div>
+                </div>
+                <div class="rotor-col">
+                    <div class="cap">Walze links</div>
+                    <div class="drum-wrap">
+                        <div class="drum"><div class="adj">Z</div><div class="cur">A</div><div class="adj">B</div></div>
+                        <div class="pass show">
+                            <div class="pass-row"><small>hin</small><b>G</b><span>→</span><b class="o">D</b></div>
+                            <div class="pass-row"><small>zurück</small><b>H</b><span>→</span><b class="o">P</b></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="rotor-col">
+                    <div class="cap">Walze Mitte</div>
+                    <div class="drum-wrap">
+                        <div class="drum"><div class="adj">Z</div><div class="cur">A</div><div class="adj">B</div></div>
+                        <div class="pass show">
+                            <div class="pass-row"><small>hin</small><b>R</b><span>→</span><b class="o">G</b></div>
+                            <div class="pass-row"><small>zurück</small><b>P</b><span>→</span><b class="o">U</b></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="rotor-col">
+                    <div class="cap">Walze rechts</div>
+                    <div class="drum-wrap">
+                        <div class="drum"><div class="adj">F</div><div class="cur">G</div><div class="adj">H</div></div>
+                        <div class="pass show">
+                            <div class="pass-row"><small>hin</small><b>E</b><span>→</span><b class="o">R</b></div>
+                            <div class="pass-row"><small>zurück</small><b>U</b><span>→</span><b class="o">N</b></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+</body>
+</html>

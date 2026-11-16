@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Console test runner for the machine logic (no browser). Exit code = number of failed checks. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseAppHost>false</UseAppHost>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="../../src/EnigmaSimulator/Core/EnigmaMachine.cs" Link="EnigmaMachine.cs" />
+  </ItemGroup>
+
+</Project>
