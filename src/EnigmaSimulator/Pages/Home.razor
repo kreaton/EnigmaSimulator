@@ -34,8 +34,6 @@
                         <option value="@r" selected="@(M.ReflectorId == r)">@EnigmaMachine.Reflectors[r].Name</option>
                     }
                 </select>
-                @* same size as the rotors' ▲ button, so the reflector drum lines up with the rotor drums *@
-                <button class="step spacer" tabindex="-1" aria-hidden="true" disabled>▲</button>
                 <div class="drum-wrap">
                     <div class="drum fixed"><div class="cur">⇄</div></div>
                     @if (_last is { } rp)

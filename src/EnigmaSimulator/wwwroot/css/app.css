@@ -1,4 +1,4 @@
-:root { --brass:#c9a54e; --ink:#101010; --wood:#2a1d12; --steel:#3a3d40; }
+:root { --brass:#c9a54e; --ink:#101010; --wood:#2a1d12; --steel:#3a3d40; --step-h:1.25rem; }
 * { box-sizing: border-box; }
 html, body { margin:0; background:#14110d radial-gradient(ellipse at top,#2b2218,#0d0b08 70%); color:#e6dcc6;
   font-family: "Courier New", ui-monospace, monospace; min-height:100vh; }
@@ -40,9 +40,10 @@ h1 span { font-size:.8rem; letter-spacing:.1rem; color:#9c8f73; margin-left:.8re
 .rotor-col.reflector { opacity:.9; }
 .sel { background:#111; color:#e6dcc6; border:1px solid #555; border-radius:4px; padding:.15rem .3rem; font:inherit; }
 .sel.ring { font-size:.75rem; }
-.step { width:3.4rem; background:#2b2d30; color:var(--brass); border:1px solid #666; border-radius:4px; cursor:pointer; }
+.step { width:3.4rem; height:var(--step-h); padding:0; line-height:1; background:#2b2d30; color:var(--brass); border:1px solid #666; border-radius:4px; cursor:pointer; }
 .step:hover { background:#3c3f43; }
-.step.spacer { visibility:hidden; }
+/* the reflector has no ▲ button: push its drum down by one button + one column gap so it lines up with the rotor drums */
+.rotor-col.reflector .drum-wrap { margin-top:calc(var(--step-h) + .25rem); }
 .drum { position:relative; width:5.2rem; height:6.4rem; border-radius:10px; overflow:hidden; display:flex; flex-direction:column;
   align-items:center; justify-content:center; border:2px solid #777;
   background:linear-gradient(90deg,#0b0b0b,#4a4d52 20%,#a5a8ad 50%,#4a4d52 80%,#0b0b0b); }
