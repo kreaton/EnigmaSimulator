@@ -3,7 +3,7 @@
 ![Blazor WebAssembly](https://img.shields.io/badge/Blazor-WebAssembly-lightgrey)
 ![.NET 10](https://img.shields.io/badge/.NET-10-lightgrey)
 ![Installable web app](https://img.shields.io/badge/PWA-installable-lightgrey)
-[![MIT License](https://img.shields.io/badge/license-MIT-lightgrey)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 ![Enigma Simulator: the Wehrmacht Enigma I / M3, wired letter by letter](images/banner.png)
 
@@ -96,6 +96,8 @@ powershell -File tools/make-icons.ps1
 powershell -File tools/make-banner.ps1
 ```
 
-## License
+## License & Authorship
 
-[MIT](LICENSE) © 2026 Per Hejndorf, Kreaton
+This project is distributed under the terms of the [MIT License](LICENSE).
+
+**AI authorship note:** Most of the source code in this repository was generated with AI coding agents (Claude Code), under my direction and review. Purely AI-generated material may not be eligible for copyright protection in some jurisdictions. To the extent any part of this project is protected by copyright, it is licensed under the MIT License, and the license's warranty and liability disclaimers apply to the project as a whole.
